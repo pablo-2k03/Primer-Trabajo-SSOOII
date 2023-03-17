@@ -19,7 +19,6 @@ struct{
 
 typedef struct{
     long tipo; //A que casilla va a ir.
-    int boolean;
     int idBuzonMsj;
 }tipoMensaje;
 
