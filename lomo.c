@@ -92,8 +92,8 @@ int main(int argc,char * argv[]){
         #ifdef DEBUG
             fprintf(stderr,"Trenes: %d",nTrenes);
         #endif
-
-
+         
+        
         for(i = 0; i< recursosIPCS.nTrenes; i++){
             if(fork()==0){
                 //Reestablece antigua acción (auxiliar).
@@ -102,13 +102,18 @@ int main(int argc,char * argv[]){
                 }
                 msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje )- sizeof(long),0);
                 msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long),TIPO_RESPTRENNUEVO,0);
-                //fprintf(stderr,"Respuesta de la biblioteca %d\n",msg.tren);
-                while(1){
-                    // Comprobar que leer mensaje sea == -1 , en ese caso, acabar. IPC_NOWAIT
+                
+                while(1){             
                     msg.tipo =  TIPO_PETAVANCE;
                     int posAnterior = msg.y;
+                    //el tipo de tren va a ser y* 74 + x  (TODO)
                     msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje) - sizeof(long),0);
-                    msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long),TIPO_RESPPETAVANCETREN0+msg.tren,0);
+                    if((msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long),TIPO_RESPPETAVANCETREN0+msg.tren,0)) == -1){
+                        // Comprobar que leer mensaje sea == -1 , en ese caso, acabar. IPC_NOWAIT  
+                        msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje) - sizeof(long),IPC_NOWAIT);
+                        break;
+                    }
+
                     msg.tipo = TIPO_AVANCE;
                     msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje) - sizeof(long),0);
                     msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long), TIPO_RESPAVANCETREN0+msg.tren,0);
