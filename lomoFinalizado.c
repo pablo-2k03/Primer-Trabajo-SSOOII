@@ -15,11 +15,13 @@ struct{
     struct semid_ds ssd;
     int idSemaforo;
     int nTrenes;
+    int idBuzonMsj;
 }recursosIPCS;
 
 typedef struct{
     long tipo; //A que casilla va a ir.
-    int idBuzonMsj;
+    int boolean;
+    
 }tipoMensaje;
 
 
@@ -53,7 +55,7 @@ int main(int argc,char * argv[]){
         if((recursosIPCS.idSemaforo = semget(IPC_PRIVATE,1,IPC_CREAT | 0600)) == -1){
             fprintf(stderr,"No se ha podido crear el semaforo.\n ");
         }
-        if((tipoMensajes.idBuzonMsj = msgget(IPC_PRIVATE,IPC_CREAT | 0600)) == -1){
+        if((recursosIPCS.idBuzonMsj = msgget(IPC_PRIVATE,IPC_CREAT | 0600)) == -1){
             fprintf(stderr,"No se ha podido crear el buzon de mensajes.\n");
         }
         //Creacion manejadora y auxiliar (hijos).
@@ -102,7 +104,8 @@ int main(int argc,char * argv[]){
         //Mandar mensajes de tipo x a todas las casillas.
         for(x = 1; x <= 75*17; x++){ 
             tipoMensajes.tipo = x; //Casilla a la q va.
-            msgsnd(tipoMensajes.idBuzonMsj,&tipoMensajes,sizeof(struct mensaje) - sizeof(long),0);
+            tipoMensajes.boolean = 0; //No hay tren.
+            msgsnd(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes) - sizeof(long),0);
         }
 
         #ifdef DEBUG
@@ -128,7 +131,7 @@ int main(int argc,char * argv[]){
                     
                     //Si hay un mensaje disponible en el buzon de mensajes, se lee y continua y sino, se queda esperando uno.
                     
-                    msgrcv(tipoMensajes.idBuzonMsj,&tipoMensajes,sizeof(struct mensaje) - sizeof(long),msg.y* 75 + msg.x+1,0); // +1 en caso de coord x = 0 y coord y = 0
+                    msgrcv(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes) - sizeof(long),msg.y* 75 + msg.x+1,0); // +1 en caso de coord x = 0 y coord y = 0
 
                     msg.tipo = TIPO_AVANCE;
                     //Mensajes para realizar el avance del tren.
@@ -138,7 +141,7 @@ int main(int argc,char * argv[]){
                     //Libera el culo del tren, porque en msg.x y msg.y esta la posicion anterior.
                     if(msg.x >= 0 && msg.y  >=0){
                         tipoMensajes.tipo = msg.y* 75 + msg.x+1; // liberar la casilla que calculas.
-                        msgsnd(tipoMensajes.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes)- sizeof(long),0);                         
+                        msgsnd(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes)- sizeof(long),0);                         
                     }     
                 }
             }
@@ -161,6 +164,9 @@ void signalHandler(int n){
     }
     if(semctl(recursosIPCS.idSemaforo,0,IPC_RMID,0) < 0){
         fprintf(stderr,"No se pudo liberar el semaforo.\n");
+    }
+    if(msgctl(recursosIPCS.idBuzonMsj,IPC_RMID,NULL) < 0){
+        fprintf(stderr,"No se pudo liberar el buzon de mensajes.\n");
     }
     kill(0,SIGKILL);
    
