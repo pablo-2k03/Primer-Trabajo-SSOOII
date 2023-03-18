@@ -107,7 +107,7 @@ int main(int argc,char * argv[]){
         //Mandar mensajes de tipo x a todas las casillas.
         for(x = 1; x <= 75*17; x++){ 
             tipoMensajes.tipo = x; //Casilla a la q va.
-            tipoMensajes.boolean = 0; //No hay tren.
+            //tipoMensajes.boolean = 0; //No hay tren.
             msgsnd(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes) - sizeof(long),0);
         }
 
