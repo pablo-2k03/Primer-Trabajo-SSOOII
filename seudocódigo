@@ -7,7 +7,7 @@ Estructura recursosIPCS {
 }
 
 Estructura tipoMensaje {
-    largo tipo;
+    long tipo;
 }
 
 Función signalHandler(n) {
