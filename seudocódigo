@@ -88,16 +88,44 @@ Principal
             Retornar 1;
         }
  siguiente -> linea 99======================================================================
+       Función signalHandler(n) {
+            Si (LOMO_fin() == -1)
+                Imprimir "Error al finalizar LOCOMOTION";
+            Fin Si
+            entero i;
+            Para i <- 0 hasta recursosIPCS.nTrenes 
+                wait(0);
+            Fin Para
+            Si (msgctl(recursosIPCS.idBuzon,IPC_RMID,NULL) < 0)
+                Imprimir "No se pudo liberar el buzon.";
+            Fin Si
+            Si (semctl(recursosIPCS.idSemaforo,0,IPC_RMID,0) < 0)
+                Imprimir "No se pudo liberar el semaforo.";
+            Fin Si
+            Si (msgctl(recursosIPCS.idBuzonMsj,IPC_RMID,NULL) < 0)
+                Imprimir "No se pudo liberar el buzon de mensajes."
+            Fin Si
+            kill(0,SIGKILL);
+   
+        }
        
+       Función comprobarPrimerArgumento(argv) {
+            Si (atoi(argv) < 0 || comprobarSegundoArgumento(argv) == -1)
+                Retornar -1;
+            Fin Si
+            Retornar atoi(argv);
+        }
        
        Función comprobarSegundoArgumento(argv) {
             entero lenArgv <- strlen(argv)
             entero i
-            para i <- 0 hasta lenArgv hacer {
+            Para i <- 0 hasta lenArgv hacer 
                 Si (!isdigit(argv[i]))
                     Retornar -1;
-            }
+                Fin Si
+            Fin Para
             Si (atoi(argv) < 0 || atoi(argv) > 100)
                 Retornar -1;
+            Fin Si
             Retornar atoi(argv);
         }
