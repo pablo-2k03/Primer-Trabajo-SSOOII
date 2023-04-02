@@ -1,94 +1,5 @@
 Estructura recursosIPCS {
     entero idBuzon;
-    struct semid_ds ssd;
-    entero idSemaforo;
-    entero nTrenes;
-    entero idBuzonMsj;
-}
-
-Estructura tipoMensaje {
-    long tipo;
-}
-
-Función signalHandler(n) {
-    // ...
-}
-
-Función comprobarPrimerArgumento(argv) {
-    // ...
-}
-
-Función comprobarSegundoArgumento(argv) {
-    // ...
-}
-
-Principal
-    Si argc < 2 Entonces
-        Imprimir "Usage: lomo --mapa"
-        Imprimir "Other Usage: lomo retardo nTrenes"
-        Retornar 1
-    Fin Si
-
-    Si argc = 2 Y argv[1] == "--mapa" Entonces
-        Si LOMO_generar_mapa("i0959394","i0919297") == -1 Entonces
-            Imprimir "Error al generar el mapa."
-            Retornar 1
-        Sino
-            Imprimir "Mapa generado correctamente."
-            Retornar 1
-        Fin Si
-    Fin Si
-
-    Si comprobarPrimerArgumento(argv[1]) != -1 Y comprobarSegundoArgumento(argv[2]) != -1 Entonces
-        entero retardo = 0
-        recursosIPCS.nTrenes = 0
-        tipoMensaje tipoMensajes
-
-        Si (recursosIPCS.idBuzon = msgget(IPC_PRIVATE,IPC_CREAT | 0600)) == -1 Entonces
-            Imprimir "No se ha podido crear el buzon."
-        Fin Si
-
-        Si (recursosIPCS.idSemaforo = semget(IPC_PRIVATE,1,IPC_CREAT | 0600)) == -1 Entonces
-            Imprimir "No se ha podido crear el semaforo."
-        Fin Si
-
-        Si (recursosIPCS.idBuzonMsj = msgget(IPC_PRIVATE,IPC_CREAT | 0600)) == -1 Entonces
-            Imprimir "No se ha podido crear el buzon de mensajes."
-        Fin Si
-
-        struct sigaction aux
-        struct sigaction ss
-
-        ss.sa_handler = &signalHandler
-        ss.sa_flags = 0
-
-        Si sigemptyset(&ss.sa_mask) == -1 Entonces
-            Imprimir "sigemptyset ERROR."
-        Fin Si
-
-        Si sigaddset(&ss.sa_mask,SIGINT) == -1 Entonces
-            Imprimir "sigaddset ERROR."
-        Fin Si
-
-        Si sigaction(SIGINT,&ss,&aux) == -1 Entonces
-            Imprimir "sigaction ERROR."
-        Fin Si
-
-        Si (retardo = comprobarPrimerArgumento(argv[1])) == -1 Entonces
-            Imprimir "El primer argumento debe ser o 0 o 1."
-            Retornar 1
-        Fin Si
-
-        Si (recursosIPCS.nTrenes = comprobarSegundoArgumento(argv[2])) == -1 Entonces
-            Imprimir "El segundo argumento debe ser un numero."
-            Retornar 1
-        Fin Si
-        Si (LOMO_inicio(retardo,recursosIPCS.idSemaforo,recursosIPCS.idBuzon,"i0959394","i0919297") == -1){
-            Imprimir "Error al iniciar LOCOMOTION."
-            Retornar 1;
-        }
-        Estructura recursosIPCS {
-    entero idBuzon;
     Estructura semid_ds ssd;
     entero idSemaforo;
     entero nTrenes;
@@ -99,17 +10,11 @@ Estructura tipoMensaje {
     long tipo;
 }
 
-Función signalHandler(n) {
-    // ...
-}
+Prototipo signalHandler(n);
 
-Función comprobarPrimerArgumento(argv) {
-    // ...
-}
+Prototipo comprobarPrimerArgumento(argv)
 
-Función comprobarSegundoArgumento(argv) {
-    // ...
-}
+Prototipo comprobarSegundoArgumento(argv)
 
 Principal
     Si argc < 2 Entonces
@@ -251,45 +156,43 @@ Principal
     Fin sino si
     devolver 0
 Fin
-
-       Función signalHandler(n) {
-            Si (LOMO_fin() == -1)
-                Imprimir "Error al finalizar LOCOMOTION";
-            Fin Si
-            entero i;
-            Para i <- 0 hasta recursosIPCS.nTrenes 
-                wait(0);
-            Fin Para
-            Si (msgctl(recursosIPCS.idBuzon,IPC_RMID,NULL) < 0)
-                Imprimir "No se pudo liberar el buzon.";
-            Fin Si
-            Si (semctl(recursosIPCS.idSemaforo,0,IPC_RMID,0) < 0)
-                Imprimir "No se pudo liberar el semaforo.";
-            Fin Si
-            Si (msgctl(recursosIPCS.idBuzonMsj,IPC_RMID,NULL) < 0)
-                Imprimir "No se pudo liberar el buzon de mensajes."
-            Fin Si
-            kill(0,SIGKILL);
-   
-        }
+Función signalHandler(n) {
+    Si (LOMO_fin() == -1)
+        Imprimir "Error al finalizar LOCOMOTION";
+    Fin Si
+    entero i;
+    Para i <- 0 hasta recursosIPCS.nTrenes 
+        wait(0);
+    Fin Para
+    Si (msgctl(recursosIPCS.idBuzon,IPC_RMID,NULL) < 0)
+        Imprimir "No se pudo liberar el buzon.";
+    Fin Si
+    Si (semctl(recursosIPCS.idSemaforo,0,IPC_RMID,0) < 0)
+        Imprimir "No se pudo liberar el semaforo.";
+    Fin Si
+    Si (msgctl(recursosIPCS.idBuzonMsj,IPC_RMID,NULL) < 0)
+        Imprimir "No se pudo liberar el buzon de mensajes."
+    Fin Si
+    kill(0,SIGKILL);
+}
        
-       Función comprobarPrimerArgumento(argv) {
-            Si (atoi(argv) < 0 || comprobarSegundoArgumento(argv) == -1)
-                Retornar -1;
-            Fin Si
-            Retornar atoi(argv);
-        }
+Función comprobarPrimerArgumento(argv) {
+    Si (atoi(argv) < 0 || comprobarSegundoArgumento(argv) == -1)
+        Retornar -1;
+    Fin Si
+    Retornar atoi(argv);
+}
        
-       Función comprobarSegundoArgumento(argv) {
-            entero lenArgv <- strlen(argv)
-            entero i
-            Para i <- 0 hasta lenArgv hacer 
-                Si (!isdigit(argv[i]))
-                    Retornar -1;
-                Fin Si
-            Fin Para
-            Si (atoi(argv) < 0 || atoi(argv) > 100)
-                Retornar -1;
-            Fin Si
-            Retornar atoi(argv);
-        }
+Función comprobarSegundoArgumento(argv) {
+    entero lenArgv <- strlen(argv)
+    entero i
+    Para i <- 0 hasta lenArgv hacer 
+        Si (!isdigit(argv[i]))
+            Retornar -1;
+        Fin Si
+    Fin Para
+    Si (atoi(argv) < 0 || atoi(argv) > 100)
+        Retornar -1;
+    Fin Si
+    Retornar atoi(argv);
+}
