@@ -83,5 +83,21 @@ Principal
             Imprimir "El segundo argumento debe ser un numero."
             Retornar 1
         Fin Si
- siguiente -> linea 99======================================================================aaaaaaaa
+        Si (LOMO_inicio(retardo,recursosIPCS.idSemaforo,recursosIPCS.idBuzon,"i0959394","i0919297") == -1){
+            Imprimir "Error al iniciar LOCOMOTION."
+            Retornar 1;
+        }
+ siguiente -> linea 99======================================================================
        
+       
+       Función comprobarSegundoArgumento(argv) {
+            entero lenArgv <- strlen(argv)
+            entero i
+            para i <- 0 hasta lenArgv hacer {
+                Si (!isdigit(argv[i]))
+                    Retornar -1;
+            }
+            Si (atoi(argv) < 0 || atoi(argv) > 100)
+                Retornar -1;
+            Retornar atoi(argv);
+        }
