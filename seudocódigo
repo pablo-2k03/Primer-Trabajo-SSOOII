@@ -87,7 +87,171 @@ Principal
             Imprimir "Error al iniciar LOCOMOTION."
             Retornar 1;
         }
- siguiente -> linea 99======================================================================
+        Estructura recursosIPCS {
+    entero idBuzon;
+    Estructura semid_ds ssd;
+    entero idSemaforo;
+    entero nTrenes;
+    entero idBuzonMsj;
+}
+
+Estructura tipoMensaje {
+    long tipo;
+}
+
+Función signalHandler(n) {
+    // ...
+}
+
+Función comprobarPrimerArgumento(argv) {
+    // ...
+}
+
+Función comprobarSegundoArgumento(argv) {
+    // ...
+}
+
+Principal
+    Si argc < 2 Entonces
+        Imprimir "Usage: lomo --mapa"
+        Imprimir "Other Usage: lomo retardo nTrenes"
+        Retornar 1
+    Fin Si
+
+    Si argc = 2 Y argv[1] == "--mapa" Entonces
+        Si LOMO_generar_mapa("i0959394","i0919297") == -1 Entonces
+            Imprimir "Error al generar el mapa."
+            Retornar 1
+        Sino
+            Imprimir "Mapa generado correctamente."
+            Retornar 1
+        Fin Si
+    Fin Si
+
+    Si comprobarPrimerArgumento(argv[1]) != -1 Y comprobarSegundoArgumento(argv[2]) != -1 Entonces
+        entero retardo = 0
+        recursosIPCS.nTrenes = 0
+        tipoMensaje tipoMensajes
+
+        Si (recursosIPCS.idBuzon <- msgget(IPC_PRIVATE,IPC_CREAT | 0600)) == -1 Entonces
+            Imprimir "No se ha podido crear el buzon."
+        Fin Si
+
+        Si (recursosIPCS.idSemaforo <- semget(IPC_PRIVATE,1,IPC_CREAT | 0600)) == -1 Entonces
+            Imprimir "No se ha podido crear el semaforo."
+        Fin Si
+
+        Si (recursosIPCS.idBuzonMsj <- msgget(IPC_PRIVATE,IPC_CREAT | 0600)) == -1 Entonces
+            Imprimir "No se ha podido crear el buzon de mensajes."
+        Fin Si
+
+        struct sigaction aux
+        struct sigaction ss
+
+        ss.sa_handler <- &signalHandler
+        ss.sa_flags <- 0
+
+        Si sigemptyset(&ss.sa_mask) == -1 Entonces
+            Imprimir "sigemptyset ERROR."
+        Fin Si
+
+        Si sigaddset(&ss.sa_mask,SIGINT) == -1 Entonces
+            Imprimir "sigaddset ERROR."
+        Fin Si
+
+        Si sigaction(SIGINT,&ss,&aux) == -1 Entonces
+            Imprimir "sigaction ERROR."
+        Fin Si
+
+        Si (retardo <- comprobarPrimerArgumento(argv[1])) == -1 Entonces
+            Imprimir "El primer argumento debe ser o 0 o 1."
+            Retornar 1
+        Fin Si
+
+        Si (recursosIPCS.nTrenes <- comprobarSegundoArgumento(argv[2])) == -1 Entonces
+            Imprimir "El segundo argumento debe ser un numero."
+            Retornar 1
+        Fin Si
+
+        Si (LOMO_inicio(retardo,recursosIPCS.idSemaforo,recursosIPCS.idBuzon,"i0959394","i0919297") == -1) Entonces
+            Imprimir "Error al iniciar LOCOMOTION."
+            Retornar 1
+        Fin Si
+
+        entero x;
+
+        para x <- 1 hasta 75*17 hacer
+            tipoMensajes.tipo <- x //Casilla a la q va.
+            msgsnd(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes) - sizeof(long),0)
+        fin para
+
+        entero i
+        Estructura mensaje msg
+        msg.tipo <- TIPO_TRENNUEVO
+        msg.tren <- 0
+        msg.x <- 0
+        msg.y <- 0
+
+        para i <- 0 hasta recursosIPSC.nTrenes hacer
+            si fork() == 0 hacer
+                si(sigaction(SIGINT,&aux,NULL) == -1) hacer
+                    Imprimir "sigaction ERROR."
+                Fin Si
+                if(msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje )- sizeof(long),0) == -1){
+                    fprintf(stderr,"Error al enviar el mensaje de creación del tren.\n");
+                }
+                si (msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje )- sizeof(long),0) == -1) hacer
+                    Imprimir "Error al enviar el mensaje de creación del tren."
+                Fin Si
+                si (msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long),TIPO_RESPTRENNUEVO,0) == -1) hacer
+                    Imprimir "Error al recibir la respuesta de la biblioteca en la creación del tren."
+                Fin Si
+                mientras verdadero hacer
+                     msg.tipo <-  TIPO_PETAVANCE
+                    entero posAnterior = msg.y          
+                    si(msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje) - sizeof(long),0) == -1) hacer
+                        Imprimir "Error al enviar el mensaje de petición de avance del tren."
+                    Fin si
+                    si(msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long),TIPO_RESPPETAVANCETREN0+msg.tren,0) == -1) hacer
+                        Imprimir "Error al recibir la respuesta de la biblioteca en la petición de avance del tren."
+                    Fin si
+                    
+                    //Si hay un mensaje disponible en el buzon de mensajes, se lee y continua y sino, se queda esperando uno.
+                    // +1 en caso de coord x = 0 y coord y = 0
+                    
+                    si(msgrcv(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes) - sizeof(long),msg.y* 75 + msg.x+1,0) == -1) hacer
+                        Imprimir "Error al recibir el mensaje de la casilla."
+                    Fin si 
+
+                    //Mensajes para realizar el avance del tren.
+                    msg.tipo <- TIPO_AVANCE;
+                    si(msgsnd(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje) - sizeof(long),0) == -1) hacer
+                        Imprimir "Error al enviar el mensaje de avance del tren."
+                    Fin si
+                    si(msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long), TIPO_RESPAVANCETREN0+msg.tren,0) == -1) hacer
+                            
+                    Fin si
+                    //Sin if porque es de tipo void.
+                    LOMO_espera(posAnterior,msg.y);
+                    //Libera el culo del tren, porque en msg.x y msg.y esta la posicion anterior.
+                    si(msg.x >= 0 && msg.y  >=0) hacer
+                        tipoMensajes.tipo <- msg.y* 75 + msg.x+1; // liberar la casilla que calculas.
+                        
+                        si(msgsnd(recursosIPCS.idBuzonMsj,&tipoMensajes,sizeof(tipoMensajes)- sizeof(long),0) == -1) hacer
+                            Imprimir "Error al enviar el mensaje de liberación de la casilla."
+                        Fin si                         
+                    Fin si 
+                Fin Mientras
+            Fin Si
+        Fin Para
+        pausa
+    Fin si
+    sino si
+        Imprimir "Introduzca argumentos validos"
+    Fin sino si
+    devolver 0
+Fin
+
        Función signalHandler(n) {
             Si (LOMO_fin() == -1)
                 Imprimir "Error al finalizar LOCOMOTION";
