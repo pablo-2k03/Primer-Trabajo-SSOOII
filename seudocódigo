@@ -134,7 +134,7 @@ Principal
                         Imprimir "Error al enviar el mensaje de avance del tren."
                     Fin si
                     si(msgrcv(recursosIPCS.idBuzon,&msg,sizeof(struct mensaje)- sizeof(long), TIPO_RESPAVANCETREN0+msg.tren,0) == -1) hacer
-                            
+                        Imprimir "Error al recibir la respuesta de la biblioteca en el avance del tren."
                     Fin si
                     //Sin if porque es de tipo void.
                     LOMO_espera(posAnterior,msg.y);
